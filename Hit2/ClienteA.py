@@ -26,6 +26,7 @@ while True:
 
         print("Servidor responde:", respuesta.decode())
 
+
         client_socket.close()
 
         # Esperar antes de volver a saludar

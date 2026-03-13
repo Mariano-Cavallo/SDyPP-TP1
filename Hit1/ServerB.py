@@ -28,3 +28,5 @@ conn.send(respuesta.encode())
 # Cerrar conexión
 conn.close()
 server_socket.close()
+
+input("Presiona Enter para salir...")

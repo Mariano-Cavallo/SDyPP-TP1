@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package comunicacion;
+
+// Mensaje enviado entre nodos
+message Mensaje {
+  string origen = 1;
+  string mensaje = 2;
+}
+
+// Respuesta del nodo receptor
+message Respuesta {
+  string mensaje = 1;
+  string origen = 2;
+}
+
+// Servicio RPC entre nodos
+service NodoService {
+  rpc EnviarMensaje (Mensaje) returns (Respuesta);
+}

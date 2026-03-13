@@ -19,3 +19,5 @@ print("Servidor responde:", respuesta)
 
 # Cerrar conexión
 client_socket.close()
+
+input("Presiona Enter para salir...")
