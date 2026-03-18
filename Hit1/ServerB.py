@@ -1,33 +1,22 @@
 import socket
 
-HOST = "0.0.0.0"   
-PORT = 5000       
+def ejecutar_servidor(host="0.0.0.0", port=5000):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((host, port))
+    server_socket.listen(1)
+    
+    conn, addr = server_socket.accept()
+    mensaje = conn.recv(1024).decode()
+    
+    respuesta = "Hola A, soy B. Saludo recibido."
+    conn.send(respuesta.encode())
 
+    print("Mensaje recibido:", mensaje)
+    
+    conn.close()
+    server_socket.close()
+    return mensaje
 
-# Crear socket TCP
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Asociar dirección y puerto
-server_socket.bind((HOST, PORT))
-
-# Escuchar conexiones
-server_socket.listen(1)
-print("Servidor esperando conexión...")
-
-# Aceptar conexión
-conn, addr = server_socket.accept()
-print("Conectado con:", addr)
-
-# Recibir saludo
-mensaje = conn.recv(1024).decode()
-print("Cliente dice:", mensaje)
-
-# Responder saludo
-respuesta = "Hola A, soy B. Saludo recibido."
-conn.send(respuesta.encode())
-
-# Cerrar conexión
-conn.close()
-server_socket.close()
-
-#input("Presiona Enter para salir...")
+if __name__ == "__main__":
+    ejecutar_servidor()

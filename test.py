@@ -1,37 +1,27 @@
-import subprocess
+import threading
 import time
-import socket
+import io
+import contextlib
+from Hit1.ServerB import ejecutar_servidor
+from Hit1.ClienteA import ejecutar_cliente
 
-def test_full_integration():
-    # 1. Lanzamos el Servidor B en segundo plano
-    server_proc = subprocess.Popen(["python3", "ServerB.py"], 
-                                   stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE,
-                                   text=True)
+def test_interaccion_proceso():
+    # 1. Iniciar servidor en segundo plano
+    server_thread = threading.Thread(target=ejecutar_servidor, daemon=True)
+    server_thread.start()
     
-    # Esperamos un momento a que el socket del servidor abra el puerto 5000
-    time.sleep(2) 
+    time.sleep(0.2)  # Espera para el bind del socket
 
-    try:
-        # 2. Ejecutamos el Cliente A y capturamos su salida
-        client_result = subprocess.run(["python3", "ClienteA.py"], 
-                                       capture_output=True, 
-                                       text=True, 
-                                       timeout=10)
-        
-        # 3. Verificaciones
-        # Revisamos si el cliente imprimió la respuesta esperada
-        assert "Hola A, soy B. Saludo recibido." in client_result.stdout
-        
-    finally:
-        # Limpieza: Matamos el proceso del servidor al terminar
-        server_proc.terminate()
-        server_proc.wait()
+    # 2. Capturar la salida estándar (stdout) para validar el comportamiento
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f):
+        ejecutar_cliente()
+    
+    output = f.getvalue()
 
-def test_port_availability():
-    """Verifica si el puerto 5000 está libre antes de empezar (útil en CI/CD)"""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex(('127.0.0.1', 5000))
-    sock.close()
-    # Si result es distinto de 0, el puerto está libre
-    assert result != 0, "El puerto 5000 ya está ocupado. El test fallará."
+    # 3. Validar los resultados impresos
+    assert "Hola A, soy B. Saludo recibido." in output
+    print("Prueba de integración exitosa: Mensaje detectado en consola.")
+
+if __name__ == "__main__":
+    test_interaccion_proceso()

@@ -1,22 +1,19 @@
 import socket
 
-HOST = "127.0.0.1"  # Dirección del servidor B
-PORT = 5000         # Puerto del servidor
+def ejecutar_cliente(host="127.0.0.1", port=5000):
+    try:
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect((host, port))
+        
+        mensaje = "Hola B, te saluda A."
+        client_socket.send(mensaje.encode())
+        
+        respuesta = client_socket.recv(1024).decode()
+        print(f"Cliente recibió: {respuesta}")
+        
+        client_socket.close()
+    except Exception as e:
+        print(f"Error en cliente: {e}")
 
-# Crear socket TCP
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Conectarse al servidor
-client_socket.connect((HOST, PORT))
-
-# Enviar saludo
-mensaje = "Hola B, te saluda A."
-client_socket.send(mensaje.encode())
-
-# Recibir respuesta
-respuesta = client_socket.recv(1024).decode()
-print("Servidor responde:", respuesta)
-
-# Cerrar conexión
-client_socket.close()
-#input("Presiona Enter para salir...")
+if __name__ == "__main__":
+    ejecutar_cliente()
