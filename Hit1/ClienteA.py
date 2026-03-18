@@ -1,5 +1,6 @@
 import socket
 
+
 def ejecutar_cliente(host="127.0.0.1", port=5000):
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
