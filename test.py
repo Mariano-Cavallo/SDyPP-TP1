@@ -1,48 +1,37 @@
-import socket
-import threading
+import subprocess
 import time
-import pytest
-from ServerB import HOST, PORT  # Asegúrate que tus archivos sean importables
+import socket
 
-def run_server():
-    """Función para ejecutar el servidor en un hilo separado."""
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind((HOST, PORT))
-    server_socket.listen(1)
+def test_full_integration():
+    # 1. Lanzamos el Servidor B en segundo plano
+    server_proc = subprocess.Popen(["python3", "ServerB.py"], 
+                                   stdout=subprocess.PIPE, 
+                                   stderr=subprocess.PIPE,
+                                   text=True)
     
-    conn, addr = server_socket.accept()
-    mensaje = conn.recv(1024).decode()
-    
-    respuesta = "Hola A, soy B. Saludo recibido."
-    conn.send(respuesta.encode())
-    
-    conn.close()
-    server_socket.close()
-    return mensaje
+    # Esperamos un momento a que el socket del servidor abra el puerto 5000
+    time.sleep(2) 
 
-def test_communication():
-    # 1. Iniciar servidor en un hilo (thread)
-    # Usamos una lista para capturar el valor retornado por el hilo si fuera necesario
-    server_thread = threading.Thread(target=run_server)
-    server_thread.start()
-    
-    # Pequeña espera para asegurar que el servidor esté escuchando
-    time.sleep(1)
-    
-    # 2. Lógica del Cliente (emulando ClienteA.py)
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        client_socket.connect(("127.0.0.1", PORT))
+        # 2. Ejecutamos el Cliente A y capturamos su salida
+        client_result = subprocess.run(["python3", "ClienteA.py"], 
+                                       capture_output=True, 
+                                       text=True, 
+                                       timeout=10)
         
-        mensaje_enviado = "Hola B, te saluda A."
-        client_socket.send(mensaje_enviado.encode())
-        
-        respuesta = client_socket.recv(1024).decode()
-        
-        # 3. Validaciones (Assertions)
-        assert respuesta == "Hola A, soy B. Saludo recibido."
+        # 3. Verificaciones
+        # Revisamos si el cliente imprimió la respuesta esperada
+        assert "Hola A, soy B. Saludo recibido." in client_result.stdout
         
     finally:
-        client_socket.close()
-        server_thread.join(timeout=5)
+        # Limpieza: Matamos el proceso del servidor al terminar
+        server_proc.terminate()
+        server_proc.wait()
+
+def test_port_availability():
+    """Verifica si el puerto 5000 está libre antes de empezar (útil en CI/CD)"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(('127.0.0.1', 5000))
+    sock.close()
+    # Si result es distinto de 0, el puerto está libre
+    assert result != 0, "El puerto 5000 ya está ocupado. El test fallará."
