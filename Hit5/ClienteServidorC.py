@@ -8,7 +8,7 @@ listen_ip = sys.argv[1]
 listen_port = int(sys.argv[2])
 remote_ip = sys.argv[3]
 remote_port = int(sys.argv[4])
-nombre = sys.argv[5]  # Nombre del nodo (A, B o C)
+nombre = sys.argv[5]  # Nombre del nodo 
 
 
 def servidor():
@@ -37,7 +37,6 @@ def servidor():
                     "origen": mensaje_json.get("origen")
                 }
 
-                # Serializar JSON
                 conn.send(json.dumps(respuesta).encode())
 
         except (ConnectionResetError, json.JSONDecodeError):
@@ -61,7 +60,6 @@ def cliente():
                 "mensaje": f"Hola desde nodo {nombre}"
             }
 
-            # Serializar JSON
             sock.send(json.dumps(saludo).encode())
 
             respuesta = sock.recv(1024)

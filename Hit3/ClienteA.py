@@ -26,10 +26,10 @@ while True:
 
         print("Servidor responde:", respuesta.decode())
 
+
         client_socket.close()
 
-        # Esperar antes de volver a saludar
-        time.sleep(5)
+        input("Presiona Enter para volver a conectar")
 
     except (ConnectionRefusedError, ConnectionResetError, ConnectionError, OSError):
         print("Conexión perdida con B. Reintentando en 5 segundos...")

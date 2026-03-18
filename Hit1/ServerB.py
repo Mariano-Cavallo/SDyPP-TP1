@@ -1,7 +1,8 @@
 import socket
 
-HOST = "0.0.0.0"   # Escucha en todas las interfaces
-PORT = 5000        # Puerto del servidor
+HOST = "0.0.0.0"   
+PORT = 5000       
+
 
 # Crear socket TCP
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,4 +30,4 @@ conn.send(respuesta.encode())
 conn.close()
 server_socket.close()
 
-input("Presiona Enter para salir...")
+#input("Presiona Enter para salir...")

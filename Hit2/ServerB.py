@@ -26,6 +26,6 @@ respuesta = "Hola A, soy B. Saludo recibido."
 conn.send(respuesta.encode())
 
 # Cerrar conexión
-input("Presiona Enter para salir...")
 conn.close()
 server_socket.close()
+input("Presiona Enter para salir...")

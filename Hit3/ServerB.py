@@ -3,34 +3,42 @@ import socket
 HOST = "0.0.0.0"
 PORT = 5000
 
+# Crear socket TCP
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(5)
 
-print("Servidor B esperando conexiones...")
+# Permitir reutilizar el puerto rápidamente
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+# Asociar dirección y puerto
+server_socket.bind((HOST, PORT))
+
+# Escuchar conexiones
+server_socket.listen(1)
+
+print("Servidor iniciado...")
 
 while True:
-    conn, addr = server_socket.accept()
-    print("Cliente conectado:", addr)
+    print("Esperando conexión...")
 
     try:
-        while True:
-            data = conn.recv(1024)
+        # Aceptar conexión
+        conn, addr = server_socket.accept()
+        print("Conectado con:", addr)
 
-            # Si el cliente cerró la conexión
-            if not data:
-                print("Cliente desconectado:", addr)
+        while True:
+            mensaje = conn.recv(1024)
+
+            if not mensaje:
+                print("Cliente desconectado.")
                 break
 
-            mensaje = data.decode()
-            print("Cliente dice:", mensaje)
+            print("Cliente dice:", mensaje.decode())
 
             respuesta = "Hola A, soy B. Saludo recibido."
             conn.send(respuesta.encode())
 
-    except ConnectionResetError:
-        print("Cliente terminó el proceso abruptamente:", addr)
-
-    finally:
         conn.close()
-        print("Conexión cerrada con", addr)
+
+    except Exception as e:
+        print("Error en la conexión:", e)
+        conn.close()
