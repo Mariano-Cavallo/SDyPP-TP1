@@ -14,7 +14,7 @@ def test_main_json(capfd):
     t1.join()
     t2.join()
 
-    time.sleep(0.2)  # 🔑 clave
+    time.sleep(0.2)  
 
     salida = capfd.readouterr().out
 

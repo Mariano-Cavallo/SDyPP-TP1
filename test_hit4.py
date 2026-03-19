@@ -14,7 +14,7 @@ def test_main_comunicacion(capfd):
     t1.join()
     t2.join()
 
-    time.sleep(0.2)  # 🔥 IMPORTANTE
+    time.sleep(0.2)  
 
     salida = capfd.readouterr().out
 
