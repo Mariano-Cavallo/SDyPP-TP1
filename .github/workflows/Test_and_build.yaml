@@ -31,4 +31,4 @@ jobs:
     - name: 
       run: |
     - name: Test with pytest
-      run:  pytest testhit1.py testhit2.py test_hit4.py test_hit5
+      run:  pytest testhit1.py testhit2.py test_hit4.py test_hit5.py
