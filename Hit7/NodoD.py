@@ -1,118 +1,79 @@
+
+import socket
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
+from datetime import datetime
+import pickle
 import threading
 
-current_nodes = []
-next_nodes = []
 
-start_time = time.time()
-window_start = int(time.time() // 60) * 60
-
-FILE = "inscripciones.json"
-
-
-def save_state():
-    data = {
-        "timestamp": time.time(),
-        "current_nodes": current_nodes,
-        "next_nodes": next_nodes
-    }
-
-    with open(FILE, "w") as f:
-        json.dump(data, f, indent=4)
+ip_server= input("Ingrese la IP en la cual va a recibir inscripciones el administrador: ")
+puerto_server = int(input("Ingrese el puerto en el cual va a recibir inscripciones el administrador: "))
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind((ip_server, puerto_server))
+lista_espera = []
+lista_inscriptos = []
+actualizacion = threading.Condition()
 
 
-def window_manager():
-    global current_nodes, next_nodes, window_start
-
+def escuchar_inscripciones():
+    server.listen()
     while True:
+        cliente, cliente_ip = server.accept()
+        print("Conexion con cliente aceptada!")
+        hilo_receptor_inscripciones = threading.Thread(target= recepcion_socket, args=(cliente,))
+        hilo_receptor_inscripciones.start()
+
+
+def recepcion_socket(cliente):
+    datos = cliente.recv(1024)
+    ip_lista, puerto = pickle.loads(datos)        
+    print(f"IP cliente:{ip_lista}\n Puerto cliente:{puerto}")
+    socket = {
+        "Nodo" : f"Nodo numero {len(lista_espera)+1}",
+        "Ip" : ip_lista,
+        "Puerto":puerto,
+        "Horario de solicitud": datetime.now()
+    }
+    lista_espera.append(socket)
+    mensaje="Solicitud de inscripcion recibida, vas a ser inscripto en la proxima ventana de inscripcion (cuando comience el proximo minuto)."
+    cliente.send(mensaje.encode())    
+    aviso_actualizacion(cliente)
+
+
+def aviso_actualizacion(cliente):
+    ##while True:
+    with actualizacion:
+        actualizacion.wait()##Espera a que se actualice la lista de inscriptos
+    mensaje = "Se actualizo la lista de inscriptos, ya esta inscripto!"
+    paquete = (mensaje, lista_inscriptos)
+    cliente.send(pickle.dumps(paquete))
+
+
+
+
+def actualizar_inscriptos():
+    while True:
+        lista_inscriptos.clear()
+        for n in lista_espera:
+            lista_inscriptos.append(n)
+        lista_espera.clear()   
+        with actualizacion:
+            actualizacion.notify_all() ##Notifica a todos los hilos que se actualizaron los inscriptos
         time.sleep(60)
 
-        print("Cambio de ventana")
 
-        current_nodes = next_nodes
-        next_nodes = []
-
-        window_start = int(time.time() // 60) * 60
-
-        save_state()
+    
+##VER LO QUE LE PREGUNTE A CHAT GPT LO DEL TIEMPO, DESPUES DE ESO YA SE TERMINA EL EJER
 
 
-class Handler(BaseHTTPRequestHandler):
-
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-
-    def do_GET(self):
-
-        if self.path == "/health":
-
-            uptime = time.time() - start_time
-
-            response = {
-                "status": "ok",
-                "current_window_start": window_start,
-                "active_nodes": len(current_nodes)
-            }
-
-            self._set_headers()
-            self.wfile.write(json.dumps(response).encode())
-
-        if self.path == "/peers":
-
-            response = {
-                "peers": current_nodes
-            }
-
-            self._set_headers()
-            self.wfile.write(json.dumps(response).encode())
-
-    def do_POST(self):
-
-        if self.path == "/register":
-
-            global next_nodes
-
-            content_length = int(self.headers["Content-Length"])
-            body = self.rfile.read(content_length)
-
-            node = json.loads(body.decode())
-
-            new_node = {
-                "ip": node["ip"],
-                "port": node["port"]
-            }
-
-            peers = current_nodes.copy()
-
-            next_nodes.append(new_node)
-
-            print("Nodo registrado para próxima ventana:", new_node)
-
-            save_state()
-
-            response = {
-                "peers": peers
-            }
-
-            self._set_headers()
-            self.wfile.write(json.dumps(response).encode())
+def sincronizar_inicio_minuto():
+    ahora = datetime.now() ##La variable ahora tiene el tiempo actual
+    segundos_restantes= 60-ahora.second ## segundos_restantes tiene los segundos que faltan para el proximo minuto
+    time.sleep(segundos_restantes)
+    actualizar_inscriptos()
 
 
-def run():
+hilo_manejo_inscriptos = threading.Thread(target=sincronizar_inicio_minuto, args=())
+hilo_manejo_inscriptos.start()
+escuchar_inscripciones()
 
-    thread = threading.Thread(target=window_manager, daemon=True)
-    thread.start()
-
-    server = HTTPServer(("0.0.0.0", 8000), Handler)
-
-    print("Nodo D corriendo en puerto 8000")
-
-    server.serve_forever()
-
-
-if __name__ == "__main__":
-    run()
