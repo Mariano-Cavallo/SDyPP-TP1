@@ -67,6 +67,8 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 
 ### Ejecución
 `python Hit4/ClienteServidorC.py 127.0.0.1 5000 127.0.0.1 5001`
+`python Hit4/ClienteServidorC.py 127.0.0.1 5001 127.0.0.1 5000`
+
 
 ---
 
