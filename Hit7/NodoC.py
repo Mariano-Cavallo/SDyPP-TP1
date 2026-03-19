@@ -1,102 +1,64 @@
 import socket
+import pickle
 import threading
-import requests
-import sys
-import json
-import time
 
-registry_ip = sys.argv[1]
-registry_port = sys.argv[2]
+ip_remota=input("Ingrese la IP remota del Administrador al cual desea solicitarle la inscripcion:")
+puerto_remoto = int(input("Ingrese el puerto remoto del Administrador al cual desea solicitarle la inscripcion:"))
 
-registry_url = f"http://{registry_ip}:{registry_port}/register"
+cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(("127.0.0.1", 0))
+ip_escucha, puerto_escucha= server.getsockname()
 
 
-def servidor(sock):
+def notificacion_actualizacion_inscriptos():
+    mensaje , lista_inscriptos = pickle.loads(cliente.recv(1024))
+    print(f"{mensaje}\n")
+    print("Lista de inscriptos: \n")
+    for n in lista_inscriptos:
+        print(n)
+        ip=n.get("Ip")
+        puerto = n.get("Puerto")
+        print(f"{ip}:{puerto}")
+        if (ip,puerto) != (ip_escucha,puerto_escucha):
+            hilo_saludo_server = threading.Thread(target=saludar_server, args=(ip,puerto,))
+            hilo_saludo_server.start()
+            print("Hilo saludo iniciado")
+    cliente.close()    
+            
+   
 
-    print("Nodo escuchando en", sock.getsockname())
+def saludar_server(ip, puerto):
+    print("Hilo saludo_server intentando conectarse al par inscripto")
+    cliente_saludo = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cliente_saludo.connect((ip, puerto))
+    cliente_saludo.send("Hola Server, soy el cliente".encode())
+    respuesta = cliente_saludo.recv(1024).decode()
+    print(respuesta)        
 
+
+def intentar_conexion():
+    cliente.connect((ip_remota, puerto_remoto))
+    cliente.send(pickle.dumps((ip_escucha, puerto_escucha)))
+    mensaje = cliente.recv(1024).decode()
+    print(f"{mensaje}\n")
+    notificacion_actualizacion_inscriptos()
+    
+    
+def escuchar_saludos():
+    server.listen()
+    print("Server escuchando saludos")
     while True:
+        cliente, cliente_ip = server.accept()
+        hilo_saludo = threading.Thread(target=recibir_saludo, args=(cliente,))
+        hilo_saludo.start()
 
-        conn, addr = sock.accept()
-
-        try:
-            data = conn.recv(1024)
-
-            if data:
-
-                msg = json.loads(data.decode())
-                print("Mensaje recibido:", msg)
-
-                response = {
-                    "type": "reply",
-                    "message": "Saludo recibido"
-                }
-
-                conn.send(json.dumps(response).encode())
-
-        except:
-            pass
-
-        finally:
-            conn.close()
-
-
-def saludar_peer(ip, port):
-
-    try:
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        s.connect((ip, port))
-
-        msg = {
-            "type": "greeting",
-            "message": "Hola desde nodo C"
-        }
-
-        s.send(json.dumps(msg).encode())
-
-        response = s.recv(1024)
-
-        if response:
-            print("Respuesta de", ip, port, json.loads(response.decode()))
-
-        s.close()
-
-    except Exception:
-        print("No se pudo conectar a", ip, port)
-
-
-def main():
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("0.0.0.0", 0))
-
-    listen_ip, listen_port = server_socket.getsockname()
-
-    server_socket.listen(5)
-
-    thread = threading.Thread(target=servidor, args=(server_socket,))
-    thread.daemon = True
-    thread.start()
-
-    register_data = {
-        "ip": socket.gethostbyname(socket.gethostname()),
-        "port": listen_port
-    }
-
-    response = requests.post(registry_url, json=register_data)
-
-    peers = response.json()["peers"]
-
-    print("Peers activos en esta ventana:", peers)
-
-    for peer in peers:
-        saludar_peer(peer["ip"], peer["port"])
-
-    while True:
-        time.sleep(10)
-
-
-if __name__ == "__main__":
-    main()
+def recibir_saludo(cliente1):
+    saludo = cliente1.recv(1024).decode()
+    print(saludo)
+    cliente1.send(f"Hola cliente, soy el Server con socket {ip_escucha}:{puerto_escucha}".encode())
+    cliente1.close()
+   
+hilo_escucha=threading.Thread(target=escuchar_saludos, args=())
+hilo_escucha.start()
+intentar_conexion()

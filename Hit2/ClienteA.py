@@ -29,7 +29,7 @@ while True:
 
         client_socket.close()
 
-        input("Presiona Enter para volver a conectar")
+       #input("Presiona Enter para volver a conectar")
 
     except (ConnectionRefusedError, ConnectionResetError, ConnectionError, OSError):
         print("Conexión perdida con B. Reintentando en 5 segundos...")
