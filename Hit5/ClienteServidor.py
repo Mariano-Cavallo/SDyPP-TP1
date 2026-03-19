@@ -28,7 +28,7 @@ def cliente(name,port,ip,loop_rouds):
         mensaje = json.dumps(texto)
         client_socket.send(mensaje.encode())
         print("Saludo enviado")
-        time.sleep(10)
+        time.sleep(0.1)
 
         client_socket.close()
         
