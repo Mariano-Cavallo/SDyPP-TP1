@@ -2,6 +2,13 @@ import socket
 import time
 import sys
 import threading
+
+"""
+Refactoriza el código de los programas A y B en un único programa, que funcione simultáneamente como cliente y servidor. 
+Esto significa que al iniciar el programa C, se le deben proporcionar por parámetros la dirección IP y el puerto para escuchar saludos, 
+así como la dirección IP y el puerto de otro nodo C. De esta manera, al tener dos instancias de C en ejecución,
+ cada una configurada con los parámetros del otro, ambas se saludan mutuamente a través de cada canal de comunicación.
+"""
 """
 En este programa necesito definir hilos, porque tanto cliente como servidor son operaciones bloqueantes, es decir
  no ejecutan otro proceso hasta que se haya determinado el estado de la conexion como exitoso o fallo, y al ser dos instancias
@@ -10,6 +17,7 @@ En este programa necesito definir hilos, porque tanto cliente como servidor son 
 """
 
 def cliente(name, port, ip, loop_rouds):
+    # conexion a socket
     for _ in range(loop_rouds):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -22,7 +30,8 @@ def cliente(name, port, ip, loop_rouds):
                 time.sleep(0.5)
 
         print("Conectado")
-
+        
+        # Desarrolo y envio del mensaje 
         mensaje = f"Hola, mi nombre es nodo {name}"
         client_socket.send(mensaje.encode())
 
@@ -33,10 +42,13 @@ def cliente(name, port, ip, loop_rouds):
 
 
 def servidor(name, port, ip, loop_rouds):
+
+    # Conexion al socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((ip, port))
     server_socket.listen(5)
 
+    # Recepcion del mensaje 
     for _ in range(loop_rouds):
         conn, addr = server_socket.accept()
         data = conn.recv(1024)
