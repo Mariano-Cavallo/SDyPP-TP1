@@ -55,9 +55,4 @@ pb.kill()
 pa.wait()
 pb.wait()
 
-if flag_a["ok"] and flag_b["ok"]:
-    print("Test OK ")
-    sys.exit(0)
-else:
-    print("Test FALLÓ ")
-    sys.exit(1)
+assert flag_a["ok"] and flag_b["ok"], "Los nodos no se saludaron correctamente"
