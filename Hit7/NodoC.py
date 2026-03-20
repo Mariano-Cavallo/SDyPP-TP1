@@ -19,17 +19,26 @@ def notificacion_actualizacion_inscriptos():
         print(n)
         ip=n.get("Ip")
         puerto = n.get("Puerto")
+<<<<<<< HEAD
+        if (ip,puerto) != (ip_escucha,puerto_escucha):
+            hilo_saludo_server = threading.Thread(target=saludar_server, args=(ip,puerto,))
+            hilo_saludo_server.start()
+=======
         print(f"{ip}:{puerto}")
         if (ip,puerto) != (ip_escucha,puerto_escucha):
             hilo_saludo_server = threading.Thread(target=saludar_server, args=(ip,puerto,))
             hilo_saludo_server.start()
             print("Hilo saludo iniciado")
+>>>>>>> 4fa331874b5cff2c8e400073d12de8d19339b8b9
     cliente.close()    
             
    
 
 def saludar_server(ip, puerto):
+<<<<<<< HEAD
+=======
     print("Hilo saludo_server intentando conectarse al par inscripto")
+>>>>>>> 4fa331874b5cff2c8e400073d12de8d19339b8b9
     cliente_saludo = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cliente_saludo.connect((ip, puerto))
     cliente_saludo.send("Hola Server, soy el cliente".encode())
@@ -47,7 +56,11 @@ def intentar_conexion():
     
 def escuchar_saludos():
     server.listen()
+<<<<<<< HEAD
+    print(f"Server escuchando saludos en {ip_escucha}:{puerto_escucha}")
+=======
     print("Server escuchando saludos")
+>>>>>>> 4fa331874b5cff2c8e400073d12de8d19339b8b9
     while True:
         cliente, cliente_ip = server.accept()
         hilo_saludo = threading.Thread(target=recibir_saludo, args=(cliente,))
