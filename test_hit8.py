@@ -21,7 +21,7 @@ print("Iniciando nodos...")
 proceso_a = subprocess.Popen(nodo_a, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 proceso_b = subprocess.Popen(nodo_b, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-time.sleep(7)
+time.sleep(12)
 
 print("Cerrando nodos...")
 
