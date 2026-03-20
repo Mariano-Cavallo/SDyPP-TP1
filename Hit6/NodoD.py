@@ -1,64 +1,33 @@
-import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
-
-nodes = []
-start_time = time.time()
+from flask import Flask,request, jsonify
 
 
-class Handler(BaseHTTPRequestHandler):
+app = Flask(__name__)
 
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
+nodes = []  
 
-    def do_GET(self):
+@app.route('/Health', methods=['GET'])
+def get_status():
+    cantidad_nodos = len(nodes)
+    return jsonify({"status": "active",
+                     "code": 200,
+                     "nodos": cantidad_nodos})
 
-        if self.path == "/health":
-            uptime = time.time() - start_time
+@app.route('/Register', methods=['POST'])
+def post_ip():
+    data = request.get_json()
+    ip = data.get("ip")
+    port = data.get("port")
 
-            response = {
-                "status": "ok",
-                "registered_nodes": len(nodes),
-                "uptime_seconds": uptime
-            }
-
-            self._set_headers()
-            self.wfile.write(json.dumps(response).encode())
-
-    def do_POST(self):
-
-        if self.path == "/register":
-
-            content_length = int(self.headers["Content-Length"])
-            body = self.rfile.read(content_length)
-
-            node = json.loads(body.decode())
-
-            ip = node["ip"]
-            port = node["port"]
-
-            new_node = {"ip": ip, "port": port}
-
-            # obtener nodos existentes antes de agregar el nuevo
-            peers = nodes.copy()
-
-            nodes.append(new_node)
-
-            response = {
-                "peers": peers
-            }
-
-            self._set_headers()
-            self.wfile.write(json.dumps(response).encode())
+    if ip and port:
+        new_node = {"ip": ip, "port": port}
+        pares = nodes.copy()  
+        nodes.append(new_node)
+        return jsonify({"mensaje": "Nodo registrado exitosamente",
+                        "pares": pares}), 200
+    else:
+        return jsonify({"mensaje": "Datos inválidos"}), 400
 
 
-def run():
-    server = HTTPServer(("0.0.0.0", 8000), Handler)
-    print("Nodo D corriendo en puerto 8000")
-    server.serve_forever()
 
-
-if __name__ == "__main__":
-    run()
+if __name__ == '__main__':
+    app.run(port=5000)

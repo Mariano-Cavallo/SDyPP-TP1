@@ -1,15 +1,39 @@
-import socket
-import threading
-import requests
-import sys
-import json
 import time
+import socket ,json
+import requests , sys
+import threading
 
-registry_ip = sys.argv[1]
-registry_port = sys.argv[2]
 
-registry_url = f"http://{registry_ip}:{registry_port}/register"
+ip_serverD = sys.argv[1]
+puerto_serverD = int(sys.argv[2])
+nombre_nodo = sys.argv[3]
 
+
+url = f"http://{ip_serverD}:{puerto_serverD}/Register"
+
+
+
+def saludar_pares(ip, port):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((ip, port))
+
+        mensaje = {
+            "tipo": "saludos",
+            "mensaje": f"Hola desde nodo {nombre_nodo}"
+        }
+
+        s.sendall(json.dumps(mensaje).encode())
+
+        response = s.recv(1024)
+
+        if response:
+            print("Respuesta de", ip, port, json.loads(response.decode()))
+        s.close()
+
+
+    except Exception as e:
+        print(f"Error al saludar al par {ip}:{port} - {e}")
 
 def servidor(sock):
 
@@ -17,7 +41,6 @@ def servidor(sock):
 
     while True:
         conn, addr = sock.accept()
-
         try:
             data = conn.recv(1024)
 
@@ -26,11 +49,11 @@ def servidor(sock):
                 print("Mensaje recibido:", msg)
 
                 response = {
-                    "type": "reply",
-                    "message": "Saludo recibido"
+                    "tipo": "respuesta",
+                    "mensaje": "Saludo recibido"
                 }
 
-                conn.send(json.dumps(response).encode())
+                conn.sendall(json.dumps(response).encode())
 
         except:
             pass
@@ -39,60 +62,38 @@ def servidor(sock):
             conn.close()
 
 
-def saludar_peer(ip, port):
-
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ip, port))
-
-        msg = {
-            "type": "greeting",
-            "message": "Hola desde nodo C"
-        }
-
-        s.send(json.dumps(msg).encode())
-
-        response = s.recv(1024)
-
-        if response:
-            print("Respuesta de", ip, port, json.loads(response.decode()))
-
-        s.close()
-
-    except Exception as e:
-        print("No se pudo conectar a", ip, port)
-
-
 def main():
 
-    # crear socket con puerto aleatorio
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("0.0.0.0", 0))
+    server_socket.bind(("127.0.0.1", 0))
 
-    listen_ip, listen_port = server_socket.getsockname()
+    ip_escucha, puerto_escucha = server_socket.getsockname()
 
     server_socket.listen(5)
 
-    # iniciar servidor en thread
     thread = threading.Thread(target=servidor, args=(server_socket,))
     thread.daemon = True
     thread.start()
 
-    # registrar nodo en D
-    register_data = {
-        "ip": socket.gethostbyname(socket.gethostname()),
-        "port": listen_port
+    datos = {
+        "ip": ip_escucha,
+        "port": puerto_escucha
     }
+    try:
+        respuesta = requests.post(url, json=datos)
+        if respuesta.status_code == 200:
+            print("Nodo registrado exitosamente")
+            data = respuesta.json()
+            nodos = data.get("pares", [])
+            print("Pares actuales en el nodo D:", nodos)
+        else:
+            print(f"Error al registrar el nodo: {respuesta.status_code}")
 
-    response = requests.post(registry_url, json=register_data)
-
-    peers = response.json()["peers"]
-
-    print("Peers recibidos:", peers)
-
-    # saludar a cada peer
-    for peer in peers:
-        saludar_peer(peer["ip"], peer["port"])
+        for nodo in nodos:
+            saludar_pares(nodo["ip"], nodo["port"])
+    
+    except Exception as e:
+        print(f"Error de conexión con NodoD: {e}")
 
     while True:
         time.sleep(10)
