@@ -21,11 +21,6 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 1. En una terminal: `python Hit1/ServerB.py`
 2. En otra terminal: `python Hit1/ClienteA.py`
 
-### Notas
-- Implementa la comunicación TCP cliente-servidor básica.
-- También hay un test de integración en `testhit1.py` que arranca servidor en thread y valida el intercambio.
-
----
 
 ## Hit2: Cliente con reconexión automática
 
@@ -39,11 +34,6 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 2. Iniciar cliente: `python Hit2/ClienteA.py`
 3. Para probar reconexión: detener servidor y reiniciarlo; el cliente se reconectará.
 
-### Notas
-- Ideal para sistemas tolerantes a caídas breves.
-- El archivo `testhit2.py` automatiza prueba de reconexión.
-
----
 
 ## Hit3: Cliente y servidor de ejemplo TCP con reconexión visual
 
@@ -66,9 +56,7 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 3. Crea un thread cliente que se conecta periódicamente al nodo remoto y envía saludos.
 
 ### Ejecución
-`python Hit4/ClienteServidorC.py 127.0.0.1 5000 127.0.0.1 5001`
-`python Hit4/ClienteServidorC.py 127.0.0.1 5001 127.0.0.1 5000`
-
+`python Hit4/ClienteServidor.py nombre_nodo ip_origen puerto_origen ip_remota puerto_remoto y numero de rondas`
 
 ---
 
@@ -80,7 +68,7 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 3. Servidor parsea JSON y responde con JSON estructurado.
 
 ### Ejecución
-`python Hit5/ClienteServidorC.py 127.0.0.1 5000 127.0.0.1 5001 Nodo1`
+`python Hit5/ClienteServidorC.py nombre ip_origen puerto_origen ip_remota puerto_remoto y numero de rondas`
 
 ---
 
@@ -117,18 +105,6 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 2. `ClienteServidorC.py` arranca un servidor gRPC y un cliente en threads.
 3. Cliente envía `Mensaje` y recibe `Respuesta` con gRPC.
 
-### Ejecución
-1. Generar los archivos protobuf (si no existen):
-   - `python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. comunicacion.proto`
-2. Ejecutar:
-   - `python Hit8/ClienteServidorC.py 127.0.0.1 5000 127.0.0.1 5001 Nodo1`
-
----
-
-## Recomendaciones de uso
-- Ejecutar cada hit en terminales separadas para observar interacción.
-- Para nodos con puertos, usar combinaciones distintas (ej. `5000`, `5001`, `5002`).
-- Para Hit6/Hit7/Hit8 conviene abrir logs en varias terminales para ver registro de pares y saludos.
 
 ## Dependencias
 Instalar con pip:
@@ -136,4 +112,6 @@ Instalar con pip:
 ```bash
 pip install grpcio grpcio-tools requests
 ```
+
+
 
