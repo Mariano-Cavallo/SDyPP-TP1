@@ -81,7 +81,7 @@ Cada hit está en su carpeta `Hit1`, `Hit2`, ..., `Hit8`. Este README describe q
 
 ### Ejecución
 1. Iniciar regitro: `python Hit6/NodoD.py`
-2. Iniciar nodo C: `python Hit6/NodoC.py 127.0.0.1 8000`
+2. Iniciar nodo C: `python Hit6/NodoC.py 127.0.0.1 5000`
 
 ---
 
