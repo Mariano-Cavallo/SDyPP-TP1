@@ -21,15 +21,12 @@ while True:
         # Recibir respuesta
         respuesta = client_socket.recv(1024)
 
-        if not respuesta:
-            raise ConnectionError("Conexión cerrada por el servidor")
 
         print("Servidor responde:", respuesta.decode())
 
 
         client_socket.close()
 
-       #input("Presiona Enter para volver a conectar")
 
     except (ConnectionRefusedError, ConnectionResetError, ConnectionError, OSError):
         print("Conexión perdida con B. Reintentando en 5 segundos...")
