@@ -4,7 +4,9 @@ import time
 from datetime import datetime
 import pickle
 import threading
+from flask import Flask, jsonify, request
 
+app = Flask(__name__)
 
 ip_server= input("Ingrese la IP en la cual va a recibir inscripciones el administrador: ")
 puerto_server = int(input("Ingrese el puerto en el cual va a recibir inscripciones el administrador: "))
@@ -32,7 +34,7 @@ def recepcion_socket(cliente):
         "Nodo" : f"Nodo numero {len(lista_espera)+1}",
         "Ip" : ip_lista,
         "Puerto":puerto,
-        "Horario de solicitud": datetime.now()
+        "Horario de solicitud": datetime.now().strftime("%H:%M:%S")
     }
     lista_espera.append(socket)
     mensaje="Solicitud de inscripcion recibida, vas a ser inscripto en la proxima ventana de inscripcion (cuando comience el proximo minuto)."
@@ -71,6 +73,21 @@ def sincronizar_inicio_minuto():
     segundos_restantes= 60-ahora.second ## segundos_restantes tiene los segundos que faltan para el proximo minuto
     time.sleep(segundos_restantes)
     actualizar_inscriptos()
+
+
+@app.route("/inscriptos", methods=["GET"])##Le indica al servidor flask que funcion ejecutar al recibir una peticion http de tip GET
+def obtener_inscriptos():
+    hora_actual = datetime.now().strftime("%H:%M:%S")
+    return jsonify({
+        f"Inscriptos a las {hora_actual}":f"{lista_inscriptos}",
+    })
+
+
+
+if __name__=="__main__":
+    hilo_flask = threading.Thread(target=app.run, kwargs={"host": "0.0.0.0", "port": 5000, "debug": False})
+    hilo_flask.start()
+
 
 
 hilo_manejo_inscriptos = threading.Thread(target=sincronizar_inicio_minuto, args=())

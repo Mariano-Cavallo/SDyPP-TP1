@@ -19,17 +19,14 @@ def notificacion_actualizacion_inscriptos():
         print(n)
         ip=n.get("Ip")
         puerto = n.get("Puerto")
-        print(f"{ip}:{puerto}")
         if (ip,puerto) != (ip_escucha,puerto_escucha):
             hilo_saludo_server = threading.Thread(target=saludar_server, args=(ip,puerto,))
             hilo_saludo_server.start()
-            print("Hilo saludo iniciado")
     cliente.close()    
             
    
 
 def saludar_server(ip, puerto):
-    print("Hilo saludo_server intentando conectarse al par inscripto")
     cliente_saludo = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cliente_saludo.connect((ip, puerto))
     cliente_saludo.send("Hola Server, soy el cliente".encode())
@@ -47,7 +44,7 @@ def intentar_conexion():
     
 def escuchar_saludos():
     server.listen()
-    print("Server escuchando saludos")
+    print(f"Server escuchando saludos en {ip_escucha}:{puerto_escucha}")
     while True:
         cliente, cliente_ip = server.accept()
         hilo_saludo = threading.Thread(target=recibir_saludo, args=(cliente,))
