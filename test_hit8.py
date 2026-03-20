@@ -1,45 +1,61 @@
 import subprocess
+import threading
 import time
 import sys
 
-nodo_a = [
-    "python", "-u", "Hit8/ClienteServidorC.py",
-    "127.0.0.1", "50051",
-    "127.0.0.1", "50052",
-    "A"
-]
+def reader(pipe, name, flag):
+    for line in iter(pipe.readline, ''):
+        print(f"[{name}] {line.strip()}")
+        if "Saludo recibido" in line:
+            flag["ok"] = True
+    pipe.close()
 
-nodo_b = [
-    "python", "-u", "Hit8/ClienteServidorC.py",
-    "127.0.0.1", "50052",
-    "127.0.0.1", "50051",
-    "B"
-]
+def start_node(cmd, name, flag):
+    p = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    t = threading.Thread(target=reader, args=(p.stdout, name, flag))
+    t.daemon = True
+    t.start()
+
+    return p
+
+nodo_a = ["python", "-u", "Hit8/ClienteServidorC.py",
+          "127.0.0.1", "50051", "127.0.0.1", "50052", "A"]
+
+nodo_b = ["python", "-u", "Hit8/ClienteServidorC.py",
+          "127.0.0.1", "50052", "127.0.0.1", "50051", "B"]
+
+flag_a = {"ok": False}
+flag_b = {"ok": False}
 
 print("Iniciando nodos...")
 
-proceso_a = subprocess.Popen(nodo_a, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-proceso_b = subprocess.Popen(nodo_b, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+pa = start_node(nodo_a, "A", flag_a)
+pb = start_node(nodo_b, "B", flag_b)
 
-time.sleep(12)
+timeout = 20
+start = time.time()
+
+while time.time() - start < timeout:
+    if flag_a["ok"] and flag_b["ok"]:
+        break
+    time.sleep(0.5)
 
 print("Cerrando nodos...")
 
-proceso_a.kill()
-proceso_b.kill()
+pa.kill()
+pb.kill()
 
-out_a, err_a = proceso_a.communicate()
-out_b, err_b = proceso_b.communicate()
+pa.wait()
+pb.wait()
 
-print("---- Nodo A ----")
-print(out_a)
-print("---- Nodo B ----")
-print(out_b)
-
-ok_a = "Saludo recibido" in out_a
-ok_b = "Saludo recibido" in out_b
-
-if ok_a and ok_b:
+if flag_a["ok"] and flag_b["ok"]:
     print("Test OK ")
     sys.exit(0)
 else:
