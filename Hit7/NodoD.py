@@ -61,7 +61,7 @@ def actualizar_inscriptos():
         lista_espera.clear()   
         with actualizacion:
             actualizacion.notify_all() ##Notifica a todos los hilos que se actualizaron los inscriptos
-        time.sleep(60)
+        time.sleep(60) # poner  time.sleep(5) para test
 
 
     
@@ -71,7 +71,7 @@ def actualizar_inscriptos():
 def sincronizar_inicio_minuto():
     ahora = datetime.now() ##La variable ahora tiene el tiempo actual
     segundos_restantes= 60-ahora.second ## segundos_restantes tiene los segundos que faltan para el proximo minuto
-    time.sleep(segundos_restantes)
+    time.sleep(segundos_restantes) # poner time.sleep(3) para testeo
     actualizar_inscriptos()
 
 
