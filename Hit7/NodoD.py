@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 import pickle
 import threading
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
