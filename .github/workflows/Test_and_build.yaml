@@ -29,9 +29,10 @@ jobs:
         pip install flake8 pytest
         pip install flask
         pip install requests
+        pip install grpcio grpcio-tools
         
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: 
       run: |
     - name: Test with pytest
-      run:  pytest test_hit1.py test_hit2.py test_hit3.py test_hit4.py test_hit5.py test_hit6.py
+      run:  pytest test_hit1.py test_hit2.py test_hit3.py test_hit4.py test_hit5.py test_hit6.py test_hit8.py
