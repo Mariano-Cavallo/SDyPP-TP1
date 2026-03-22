@@ -51,8 +51,6 @@ def aviso_actualizacion(cliente):
     cliente.send(pickle.dumps(paquete))
 
 
-
-
 def actualizar_inscriptos():
     while True:
         lista_inscriptos.clear()
@@ -63,9 +61,6 @@ def actualizar_inscriptos():
             actualizacion.notify_all() ##Notifica a todos los hilos que se actualizaron los inscriptos
         time.sleep(60)
 
-
-    
-##VER LO QUE LE PREGUNTE A CHAT GPT LO DEL TIEMPO, DESPUES DE ESO YA SE TERMINA EL EJER
 
 
 def sincronizar_inicio_minuto():

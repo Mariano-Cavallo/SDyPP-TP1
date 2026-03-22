@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class NodoServiceStub(object):
+class NodoServiceStub(object):##Clase para implementar el cliente
     """Servicio RPC entre nodos
     """
 
@@ -42,7 +42,7 @@ class NodoServiceStub(object):
                 _registered_method=True)
 
 
-class NodoServiceServicer(object):
+class NodoServiceServicer(object):##Clase para implementar el servidor grpc
     """Servicio RPC entre nodos
     """
 
@@ -52,6 +52,13 @@ class NodoServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+##servicer es que va a hacer el servidor cuando le llegue un saludo, fijarse que en 
+##ClienteServidorC.py se crea una clase de tipo servicer, que es la que se pasa por parametro
+##en "add_NodoServiceServicer_to_server(servicer, server)", es como que gRPC parte al servidor 
+##en dos funcionalidades distintas, el objeto de tipo Server se encarga de escuchar las 
+##conexiones entrantes, una vez aceptada, el servicer se encarga de tratar esa conexion.
+##Probablemente dentro de la libreria, haya un hilo para escuchar las conexiones (para el server)
+##y otro para tratarlas (servicer)
 
 def add_NodoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -68,7 +75,7 @@ def add_NodoServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class NodoService(object):
+class NodoService(object):##Cliente alternativo experimental que crea el compilador, rara vez se utiliza
     """Servicio RPC entre nodos
     """
 
