@@ -1,5 +1,6 @@
 
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -23,6 +24,7 @@ def _start_node(name):
         text=True,
         bufsize=1,
         env=env,
+        cwd=str(SCRIPT_HIT8.parent),
     )
 
     lines = []
@@ -54,14 +56,25 @@ def _wait_until(predicate, timeout=12, step=0.1):
     return False
 
 
+def _get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
 def test_saludo_bidireccional_grpc_hit8():
     print("[TEST] Iniciando prueba gRPC bidireccional Hit8", flush=True)
+    port_a = _get_free_port()
+    port_b = _get_free_port()
+    while port_b == port_a:
+        port_b = _get_free_port()
+
     nodo_a, out_a = _start_node("A")
     nodo_b, out_b = _start_node("B")
 
     try:
-        _send_lines(nodo_a, ["127.0.0.1", "50051"], "A")
-        _send_lines(nodo_b, ["127.0.0.1", "50052"], "B")
+        _send_lines(nodo_a, ["127.0.0.1", str(port_a)], "A")
+        _send_lines(nodo_b, ["127.0.0.1", str(port_b)], "B")
 
         ok_a_server = _wait_until(lambda: any("Servidor iniciado" in ln for ln in out_a), timeout=10)
         ok_b_server = _wait_until(lambda: any("Servidor iniciado" in ln for ln in out_b), timeout=10)
@@ -70,8 +83,8 @@ def test_saludo_bidireccional_grpc_hit8():
 
         assert ok_a_server and ok_b_server, "No iniciaron ambos servidores gRPC"
 
-        _send_lines(nodo_a, ["127.0.0.1", "50052", "1"], "A")
-        _send_lines(nodo_b, ["127.0.0.1", "50051", "1"], "B")
+        _send_lines(nodo_a, ["127.0.0.1", str(port_b), "1"], "A")
+        _send_lines(nodo_b, ["127.0.0.1", str(port_a), "1"], "B")
 
         ok_a_resp = _wait_until(lambda: any("[RESPUESTA PROTOBUF]" in ln for ln in out_a), timeout=15)
         ok_b_resp = _wait_until(lambda: any("[RESPUESTA PROTOBUF]" in ln for ln in out_b), timeout=15)
