@@ -1,58 +1,98 @@
-def test_saludo():
-    import subprocess
-    import threading
-    import time
 
-    def reader(pipe, name, flag):
-        for line in iter(pipe.readline, ''):
-            print(f"[{name}] {line.strip()}")
-            if "Saludo recibido" in line:
-                flag["ok"] = True
-        pipe.close()
+import os
+import subprocess
+import sys
+import threading
+import time
+from pathlib import Path
 
-    def start_node(cmd, name, flag):
-        p = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
 
-        t = threading.Thread(target=reader, args=(p.stdout, name, flag))
-        t.daemon = True
-        t.start()
+BASE_DIR = Path(__file__).resolve().parent
+SCRIPT_HIT8 = BASE_DIR / "Hit8" / "ClienteServidorC.py"
 
-        return p
 
-    nodo_a = ["python", "-u", "Hit8/ClienteServidorC.py",
-              "127.0.0.1", "50051", "127.0.0.1", "50052", "A"]
+def _start_node(name):
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
 
-    nodo_b = ["python", "-u", "Hit8/ClienteServidorC.py",
-              "127.0.0.1", "50052", "127.0.0.1", "50051", "B"]
+    proc = subprocess.Popen(
+        [sys.executable, "-u", str(SCRIPT_HIT8)],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        env=env,
+    )
 
-    flag_a = {"ok": False}
-    flag_b = {"ok": False}
+    lines = []
 
-    print("Iniciando nodos...")
+    def _reader():
+        for line in iter(proc.stdout.readline, ""):
+            line = line.rstrip("\n")
+            lines.append(line)
+            print(f"[{name}] {line}", flush=True)
 
-    pa = start_node(nodo_a, "A", flag_a)
-    pb = start_node(nodo_b, "B", flag_b)
+    t = threading.Thread(target=_reader, daemon=True)
+    t.start()
+    return proc, lines
 
-    timeout = 20
+
+def _send_lines(proc, values, name):
+    for value in values:
+        print(f"[TEST] Input a {name}: {value}", flush=True)
+        proc.stdin.write(f"{value}\n")
+    proc.stdin.flush()
+
+
+def _wait_until(predicate, timeout=12, step=0.1):
     start = time.time()
-
     while time.time() - start < timeout:
-        if flag_a["ok"] and flag_b["ok"]:
-            break
-        time.sleep(0.5)
+        if predicate():
+            return True
+        time.sleep(step)
+    return False
 
-    print("Cerrando nodos...")
 
-    pa.kill()
-    pb.kill()
+def test_saludo_bidireccional_grpc_hit8():
+    print("[TEST] Iniciando prueba gRPC bidireccional Hit8", flush=True)
+    nodo_a, out_a = _start_node("A")
+    nodo_b, out_b = _start_node("B")
 
-    pa.wait()
-    pb.wait()
+    try:
+        _send_lines(nodo_a, ["127.0.0.1", "50051"], "A")
+        _send_lines(nodo_b, ["127.0.0.1", "50052"], "B")
 
-    assert flag_a["ok"] and flag_b["ok"], "Los nodos no se saludaron correctamente"
+        ok_a_server = _wait_until(lambda: any("Servidor iniciado" in ln for ln in out_a), timeout=10)
+        ok_b_server = _wait_until(lambda: any("Servidor iniciado" in ln for ln in out_b), timeout=10)
+        print(f"[TEST] Servidor A iniciado: {ok_a_server}", flush=True)
+        print(f"[TEST] Servidor B iniciado: {ok_b_server}", flush=True)
+
+        assert ok_a_server and ok_b_server, "No iniciaron ambos servidores gRPC"
+
+        _send_lines(nodo_a, ["127.0.0.1", "50052", "1"], "A")
+        _send_lines(nodo_b, ["127.0.0.1", "50051", "1"], "B")
+
+        ok_a_resp = _wait_until(lambda: any("[RESPUESTA PROTOBUF]" in ln for ln in out_a), timeout=15)
+        ok_b_resp = _wait_until(lambda: any("[RESPUESTA PROTOBUF]" in ln for ln in out_b), timeout=15)
+        print(f"[TEST] Nodo A recibió respuesta: {ok_a_resp}", flush=True)
+        print(f"[TEST] Nodo B recibió respuesta: {ok_b_resp}", flush=True)
+
+        assert ok_a_resp and ok_b_resp, "No hubo respuesta gRPC en ambos nodos"
+        assert any("Hola Server" in ln for ln in out_a), "Nodo A no recibió saludo del nodo B"
+        assert any("Hola Server" in ln for ln in out_b), "Nodo B no recibió saludo del nodo A"
+        assert not any("Traceback" in ln for ln in out_a), "Nodo A tuvo una excepción"
+        assert not any("Traceback" in ln for ln in out_b), "Nodo B tuvo una excepción"
+        print("[TEST] OK: ambos nodos se saludaron por gRPC", flush=True)
+
+    finally:
+        print("[TEST] Cerrando procesos", flush=True)
+        for proc in (nodo_a, nodo_b):
+            if proc.poll() is None:
+                proc.kill()
+        for proc in (nodo_a, nodo_b):
+            proc.wait(timeout=5)
+
+
+if __name__ == "__main__":
+    test_saludo_bidireccional_grpc_hit8()
